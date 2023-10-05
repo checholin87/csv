@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <changeSet id="changelog-1.0.0-1" author="secosme" logicalFilePath="db.changelog-1.0.0.xml">
+        <comment>Create the table of associate</comment>
+        <createTable tableName="associate" remarks="Active associate for vote">
+            <column name="id" remarks="Associate global unique generated UUID" type="uuid">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="associate_pkey"/>
+            </column>
+            <column name="identification" type="text" remarks="Associate identification">
+                <constraints nullable="false" />
+            </column>
+            <column name="full_name" type="text" remarks="Associate fullname">
+                <constraints nullable="false" />
+            </column>
+            <column name="regional" type="text" remarks="Associate regional">
+                <constraints nullable="false" />
+            </column>
+            <column name="dependency_code" type="text" remarks="Associate dependency code">
+                <constraints nullable="false" />
+            </column>
+            <column name="dependency_name" type="text" remarks="Associate dependency name">
+                <constraints nullable="false" />
+            </column>
+            <column name="zone" type="text" remarks="Associate zone">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

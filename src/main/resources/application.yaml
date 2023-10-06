@@ -29,6 +29,11 @@ spring:
         properties:
             hibernate:
                 dialect: org.hibernate.dialect.PostgreSQLDialect
+                order_updates: true
+                order_inserts: true
+                jdbc:
+                    batch_size: 100
+                    batch_versioned_data: true
 
 logging:
     level:

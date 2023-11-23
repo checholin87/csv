@@ -53,7 +53,8 @@ public class CsvProcessor {
             Thread.currentThread().toString(), batchSize);
 
         log.info(message);
-        template.convertAndSend("/topic/csv/progress", new CsvProcessorStatus(CsvProcessorStatusEnum.STARTED, LocalDateTime.now(), message));
+        var destination = "/topic/csv/progress";
+        template.convertAndSend(destination, new CsvProcessorStatus(CsvProcessorStatusEnum.STARTED, LocalDateTime.now(), message));
 
         var dtos = csvFile2AssociateCsvDTO.apply(new StringReader(new String(csvFile, StandardCharsets.UTF_8)));
         var batch = new ArrayList<AssociateCsvDTO>();
@@ -64,6 +65,8 @@ public class CsvProcessor {
 
             if (batch.size() == batchSize) {
                 processBulk(batch);
+                template.convertAndSend(destination, new CsvProcessorStatus(CsvProcessorStatusEnum.PROCESING,
+                    LocalDateTime.now(), String.format("Processed %s associates", batch.size())));
                 batch.clear();
             }
         }
@@ -76,7 +79,7 @@ public class CsvProcessor {
             Thread.currentThread().toString());
 
         log.info(message);
-        template.convertAndSend("/topic/csv/progress", new CsvProcessorStatus(CsvProcessorStatusEnum.FINISHED, LocalDateTime.now(), message));
+        template.convertAndSend(destination, new CsvProcessorStatus(CsvProcessorStatusEnum.FINISHED, LocalDateTime.now(), message));
 
         MDC.clear();
 
@@ -116,7 +119,7 @@ public class CsvProcessor {
     }
 
     public enum CsvProcessorStatusEnum {
-        STARTED, FINISHED
+        STARTED, PROCESING, FINISHED
     }
 
 }

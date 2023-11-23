@@ -13,11 +13,6 @@ import org.springframework.core.task.support.TaskExecutorAdapter;
 @Configuration
 public class Factory {
 
-    @Bean
-    ICsvMapper mapper() {
-        return Mappers.getMapper(ICsvMapper.class);
-    }
-
     /**
      * This is the key to make the application async tasks work with virtual threads.
      * 

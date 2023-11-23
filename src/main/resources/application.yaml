@@ -34,8 +34,3 @@ spring:
                 jdbc:
                     batch_size: 100
                     batch_versioned_data: true
-
-logging:
-    level:
-        ROOT: INFO
-        logging.level.org.hibernate.SQL: INFO

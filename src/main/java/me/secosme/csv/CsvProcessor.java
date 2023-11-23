@@ -2,11 +2,14 @@ package me.secosme.csv;
 
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -26,20 +29,31 @@ public class CsvProcessor {
 
     private int batchSize;
 
-    public CsvProcessor(CsvFile2AssociateCsvDTO csvFile2AssociateCsvDTO, 
-        ICsvMapper csvMapper, IAssociateRepository associateRepository, 
-        @Value("${spring.jpa.properties.hibernate.jdbc.batch_size}") int batchSize) {
+    private SimpMessagingTemplate template;
+
+    public CsvProcessor(CsvFile2AssociateCsvDTO csvFile2AssociateCsvDTO,
+        ICsvMapper csvMapper, IAssociateRepository associateRepository,
+        @Value("${spring.jpa.properties.hibernate.jdbc.batch_size}") int batchSize,
+        SimpMessagingTemplate template) {
         this.csvFile2AssociateCsvDTO = csvFile2AssociateCsvDTO;
         this.csvMapper = csvMapper;
         this.associateRepository = associateRepository;
         this.batchSize = batchSize;
+        this.template = template;
     }
 
     @Async
     @Transactional
     public void process(byte[] csvFile) {
-        log.info("Processing CSV started at {} on thread {} by bulks of {}", System.currentTimeMillis(), 
+
+        MDC.put("thread", Thread.currentThread().toString());
+        MDC.put("batchSize", Integer.toString(batchSize));
+
+        var message = String.format("Processing CSV started at %s on thread %s by bulks of %s", System.currentTimeMillis(),
             Thread.currentThread().toString(), batchSize);
+
+        log.info(message);
+        template.convertAndSend("/topic/csv/progress", new CsvProcessorStatus(CsvProcessorStatusEnum.STARTED, LocalDateTime.now(), message));
 
         var dtos = csvFile2AssociateCsvDTO.apply(new StringReader(new String(csvFile, StandardCharsets.UTF_8)));
         var batch = new ArrayList<AssociateCsvDTO>();
@@ -58,7 +72,14 @@ public class CsvProcessor {
             processBulk(batch);
         }
 
-        log.info("Processing CSV finished at {}", System.currentTimeMillis());
+        message = String.format("Processing CSV finished at %s on thread %s", System.currentTimeMillis(),
+            Thread.currentThread().toString());
+
+        log.info(message);
+        template.convertAndSend("/topic/csv/progress", new CsvProcessorStatus(CsvProcessorStatusEnum.FINISHED, LocalDateTime.now(), message));
+
+        MDC.clear();
+
     }
 
     private void processBulk(List<AssociateCsvDTO> bulk) {
@@ -88,6 +109,14 @@ public class CsvProcessor {
 
         associateRepository.saveAll(existingAssociates);
         associateRepository.flush();
+
+    }
+
+    public record CsvProcessorStatus(CsvProcessorStatusEnum status, LocalDateTime timestamp, String message) {
+    }
+
+    public enum CsvProcessorStatusEnum {
+        STARTED, FINISHED
     }
 
 }
